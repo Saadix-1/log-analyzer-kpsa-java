@@ -1,11 +1,11 @@
-# 📄 KPSA Log Analyzer (Java)
+# KPSA Log Analyzer (Java)
 
 This is a Java-based tool developed as part of an internship at **Atos**.  
 It reads production log files from the **KPSA provisioning system** used in the telecom domain and automatically extracts key operational statuses related to a specific request ID (PO / WO / SO).
 
 ---
 
-## 🔧 Features
+##  Features
 
 - Read `.log` files line by line
 - Extract and identify the Request ID
@@ -19,7 +19,7 @@ It reads production log files from the **KPSA provisioning system** used in the 
 
 ---
 
-## 💡 Technologies
+##  Technologies
 
 - Java (JDK 17+)
 - Regular Expressions (`java.util.regex`)
@@ -28,7 +28,7 @@ It reads production log files from the **KPSA provisioning system** used in the 
 
 ---
 
-## 📂 Example
+##  Example
 
 **Input file:** `kpsaOrder.log`
 
