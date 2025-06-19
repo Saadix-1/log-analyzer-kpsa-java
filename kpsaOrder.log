@@ -1,0 +1,4 @@
+2025-06-10 11:23:48.863063|INFO |basesodata:1|GSM:ContractActivation|2147578658|ServiceOrderData SWAPPED IN (status: New)
+2025-06-10 11:25:31.355111|INFO |pop:3|prod.101:iteration|2147578658::5|Product Order Execution ENDED :  RETRY NUMBER : 1 : STATUS : OK
+2025-06-10 11:25:31.349634|INFO |wop:2|BSCSWS:getPuk:_./conf/POF_GET_PUK.xml_POF_GET_PUK_GET_PUK_0|2147578658::5::1|Cartridge WO Execution ENDED : RETRY NUMBER : 1 : INSTANCE NAME : BSCSWS_01 : STATUS : OK : PROCESSING TIME : 96891 microseconds
+2025-06-10 11:23:50.744959|INFO |basesodata:3|GSM:ContractActivation|2147578658|ServiceOrderData DELETED (status: OK), processing time = 13340348 microseconds
