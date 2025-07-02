@@ -5,7 +5,7 @@ It reads production log files from the **KPSA provisioning system** used in the 
 
 ---
 
-## 🔍 Features
+##  Features
 
 - Web-based interface using Spring Boot (localhost:8080)
 - Upload or analyze a log file from the `resources` folder
@@ -13,15 +13,15 @@ It reads production log files from the **KPSA provisioning system** used in the 
 - Extract and identify the Request ID
 - Detect and display the operation type (e.g., GSM:ContractActivation)
 - Parse and summarize:
-  - ✅ PO (Product Order) status
-  - ✅ WO (Work Order) status
-  - ✅ SO (Service Order) status
+  - PO (Product Order) status
+  - WO (Work Order) status
+  - SO (Service Order) status
 - Convert SO processing time (microseconds ➝ seconds)
 - Output results clearly on a webpage
 
 ---
 
-## 🧰 Technologies
+##  Technologies
 
 - Java (JDK 17+)
 - Spring Boot (v3.5.3)
@@ -33,7 +33,7 @@ It reads production log files from the **KPSA provisioning system** used in the 
 
 ---
 
-## 🏁 Getting Started
+##  Getting Started
 
 ### 1. Prerequisites
 - Java 17+
@@ -57,7 +57,7 @@ Then open your browser and go to:
 
 ---
 
-## 📁 Project Structure
+##  Project Structure
 
 ```
 loganalyzer/
@@ -74,8 +74,20 @@ loganalyzer/
 ```
 
 ---
+### 4. Spring Boot Configuration
 
-## 📌 Example Output
+The project uses [Spring Boot Starter Web](https://spring.io/projects/spring-boot) for building the web interface.
+
+If you're using an IDE:
+- Make sure `Maven` dependencies are installed (usually auto-resolved).
+- Spring Boot entry point is in: `LogAnalyzerApplication.java`
+
+To change the port or configure logging, edit:
+```properties
+src/main/resources/application.properties
+-----
+
+## Example Output
 
 ```text
 Résultat pour Request ID 2147578658 :
@@ -88,7 +100,7 @@ Résultat pour Request ID 2147578658 :
 
 ---
 
-## 🧑‍💻 Author
+##  Author
 
 **Saad Mehamdi**
 Software Engineering Intern @ Atos
