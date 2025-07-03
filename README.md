@@ -103,6 +103,6 @@ Résultat pour Request ID 2147578658 :
 ##  Author
 
 **Saad Mehamdi**
-Software Engineering Intern @ Atos
+Software Engineering Intern @ Atos (Coop)
 University of Ottawa – 1st year
 
