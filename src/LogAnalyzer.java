@@ -1,3 +1,4 @@
+
 import java.io.*;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -8,85 +9,98 @@ public class LogAnalyzer {
 
     public static void main(String[] args) {
         Scanner scanner = new Scanner(System.in);
-
         System.out.print("Entrez la Request ID à analyser : ");
         String requestId = scanner.nextLine().trim();
 
-        String operation = null;
-        String poStatus = null;
-        String woStatus = null;
-        String soStatus = null;
-        String processingTimeSO = null;
+        List<String> poInstances = new ArrayList<>();
+        List<String> woInstances = new ArrayList<>();
+        List<String> soInstances = new ArrayList<>();
+        String accountCaller = null;
 
-        Long startTimeSO = null;
-        Long endTimeSO = null;
+        Long swappedInTime = null;
+        Long deletedTime = null;
 
         try (BufferedReader reader = new BufferedReader(new FileReader("kpsaOrder.log"))) {
             String line;
-
             while ((line = reader.readLine()) != null) {
-
-                // Opérations 
-                if (line.contains("ServiceOrderData SWAPPED IN") && line.contains(requestId)) {
-                    Pattern pattern = Pattern.compile("\\|([^|]+)\\|ServiceOrderData SWAPPED IN");
+                // GET ACCOUNT line
+                if (line.contains("GET ACCOUNT") && line.contains(requestId)) {
+                    Pattern pattern = Pattern.compile("ACCOUNT : ([^|]+)");
                     Matcher matcher = pattern.matcher(line);
                     if (matcher.find()) {
-                        operation = "GSM:ContractActivation"; // ou extraire depuis le log si c'est variable
+                        accountCaller = matcher.group(1).trim();
                     }
-
-                    // Extraire timestamp pour début SO
-                    startTimeSO = extractTimestampMillis(line);
                 }
 
-                // PO
+                // PO - Product Order
                 if (line.contains("Product Order Execution ENDED") && line.contains(requestId)) {
-                    Pattern pattern = Pattern.compile("STATUS : ([A-Z]+)");
+                    Pattern pattern = Pattern.compile("INSTANCE NAME : ([^|]+).*STATUS : ([A-Z]+)");
                     Matcher matcher = pattern.matcher(line);
                     if (matcher.find()) {
-                        poStatus = matcher.group(1);
+                        String instance = matcher.group(1).trim();
+                        String status = matcher.group(2).trim();
+                        poInstances.add(instance + " = " + status);
                     }
                 }
 
-                // WO
+                // WO - Work Order
                 if (line.contains("Cartridge WO Execution ENDED") && line.contains(requestId)) {
-                    Pattern pattern = Pattern.compile("(\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}).*INSTANCE NAME : ([^:]+) : STATUS : ([A-Z]+)");
+                    Pattern pattern = Pattern.compile("INSTANCE NAME : ([^|]+).*STATUS : ([A-Z]+)");
                     Matcher matcher = pattern.matcher(line);
                     if (matcher.find()) {
-                        String timestamp = matcher.group(1);
-                        String instance = matcher.group(2);
-                        String status = matcher.group(3);
-                        woStatus = status + " (" + instance + ") à " + timestamp;
+                        String instance = matcher.group(1).trim();
+                        String status = matcher.group(2).trim();
+                        woInstances.add(instance + " = " + status);
                     }
                 }
 
-                // SO
-                if (line.contains("ServiceOrderData") && line.contains(requestId)) {
-                    if (line.contains("DELETED")) {
-                        soStatus = "DELETED";
-                        endTimeSO = extractTimestampMillis(line);
-                    } else if (line.contains("PROCESSED")) {
-                        soStatus = "PROCESSED";
-                    } else if (line.contains("FAILED")) {
-                        soStatus = "FAILED";
+                // SO - Service Order
+                if (line.contains("ServiceOrderData SWAPPED IN") && line.contains(requestId)) {
+                    swappedInTime = extractTimestampMillis(line);
+                }
+                if (line.contains("ServiceOrderData DELETED") && line.contains(requestId)) {
+                    deletedTime = extractTimestampMillis(line);
+                    Pattern pattern = Pattern.compile("INSTANCE NAME : ([^|]+).*STATUS : ([A-Z]+)");
+                    Matcher matcher = pattern.matcher(line);
+                    if (matcher.find()) {
+                        String instance = matcher.group(1).trim();
+                        String status = matcher.group(2).trim();
+                        soInstances.add(instance + " = " + status);
                     }
                 }
             }
 
-            // Calcul temps SO
-            if (startTimeSO != null && endTimeSO != null) {
-                long diffMillis = endTimeSO - startTimeSO;
-                processingTimeSO = String.format("%.2f secondes", diffMillis / 1000.0);
+            // Résultat
+            System.out.println("\n--- Résultat pour la Request ID " + requestId + " ---");
+            System.out.println("- Compte appelant : " + (accountCaller != null ? accountCaller : "Non trouvé"));
+
+            System.out.println("\n- Product Order (PO):");
+            if (!poInstances.isEmpty()) {
+                for (String po : poInstances) System.out.println("   ➤ " + po);
             } else {
-                processingTimeSO = "Non disponible";
+                System.out.println("   Aucun PO trouvé.");
             }
 
-            // Résultat final
-            System.out.println("\nRésultat pour la Request ID " + requestId + ":");
-            System.out.println("- Opération       : " + (operation != null ? operation : "Non trouvée"));
-            System.out.println("- Statut PO       : " + (poStatus != null ? poStatus : "Non trouvé"));
-            System.out.println("- Statut WO       : " + (woStatus != null ? woStatus : "Non trouvé"));
-            System.out.println("- Statut SO       : " + (soStatus != null ? soStatus : "Non trouvé"));
-            System.out.println("- Temps SO        : " + (processingTimeSO != null ? processingTimeSO : "Non trouvé"));
+            System.out.println("\n- Work Order (WO):");
+            if (!woInstances.isEmpty()) {
+                for (String wo : woInstances) System.out.println("   ➤ " + wo);
+            } else {
+                System.out.println("   Aucun WO trouvé.");
+            }
+
+            System.out.println("\n- Service Order (SO):");
+            if (!soInstances.isEmpty()) {
+                for (String so : soInstances) System.out.println("   ➤ " + so);
+            } else {
+                System.out.println("   Aucun SO trouvé.");
+            }
+
+            if (swappedInTime != null && deletedTime != null) {
+                long durationMillis = deletedTime - swappedInTime;
+                System.out.println("\n- Temps de traitement SO : " + durationMillis + " millisecondes");
+            } else {
+                System.out.println("\n- Temps de traitement SO : Données incomplètes");
+            }
 
         } catch (IOException e) {
             System.err.println("Erreur de lecture du fichier : " + e.getMessage());
