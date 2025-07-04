@@ -1,6 +1,6 @@
 import java.io.*;
-        import java.util.regex.*;
         import java.util.*;
+        import java.util.regex.*;
 
 public class    LogAnalyzer {
 
@@ -29,7 +29,7 @@ public class    LogAnalyzer {
                     Pattern pattern = Pattern.compile("\\|([^|]+)\\|ServiceOrderData SWAPPED IN");
                     Matcher matcher = pattern.matcher(line);
                     if (matcher.find()) {
-                        operation = matcher.group(1); // ex: GSM:ContractActivation
+                        operation = matcher.group(1); 
                     }
                 }
 
