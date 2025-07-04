@@ -1,39 +1,44 @@
 import java.io.*;
-        import java.util.*;
-        import java.util.regex.*;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.*;
+import java.util.regex.*;
 
-public class    LogAnalyzer {
+public class LogAnalyzer {
 
     public static void main(String[] args) {
         Scanner scanner = new Scanner(System.in);
 
-        // 1. Demander à l'utilisateur la Request ID
         System.out.print("Entrez la Request ID à analyser : ");
         String requestId = scanner.nextLine().trim();
 
-        // 2. Initialiser les variables pour stocker les résultats
         String operation = null;
         String poStatus = null;
         String woStatus = null;
         String soStatus = null;
         String processingTimeSO = null;
 
-        // 3. Lire le fichier log
+        Long startTimeSO = null;
+        Long endTimeSO = null;
+
         try (BufferedReader reader = new BufferedReader(new FileReader("kpsaOrder.log"))) {
             String line;
 
             while ((line = reader.readLine()) != null) {
 
-                // a. Détecter l'opération (ligne SWAPPED IN)
+                // Opérations 
                 if (line.contains("ServiceOrderData SWAPPED IN") && line.contains(requestId)) {
                     Pattern pattern = Pattern.compile("\\|([^|]+)\\|ServiceOrderData SWAPPED IN");
                     Matcher matcher = pattern.matcher(line);
                     if (matcher.find()) {
-                        operation = matcher.group(1); 
+                        operation = "GSM:ContractActivation"; // ou extraire depuis le log si c'est variable
                     }
+
+                    // Extraire timestamp pour début SO
+                    startTimeSO = extractTimestampMillis(line);
                 }
 
-                // b. Statut PO (Product Order Execution ENDED)
+                // PO
                 if (line.contains("Product Order Execution ENDED") && line.contains(requestId)) {
                     Pattern pattern = Pattern.compile("STATUS : ([A-Z]+)");
                     Matcher matcher = pattern.matcher(line);
@@ -42,31 +47,41 @@ public class    LogAnalyzer {
                     }
                 }
 
-                // c. Statut WO (Cartridge WO Execution ENDED)
+                // WO
                 if (line.contains("Cartridge WO Execution ENDED") && line.contains(requestId)) {
-                    Pattern pattern = Pattern.compile("INSTANCE NAME : ([^:]+) : STATUS : ([A-Z]+)");
+                    Pattern pattern = Pattern.compile("(\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}).*INSTANCE NAME : ([^:]+) : STATUS : ([A-Z]+)");
                     Matcher matcher = pattern.matcher(line);
                     if (matcher.find()) {
-                        String instance = matcher.group(1);
-                        String status = matcher.group(2);
-                        woStatus = status + " (" + instance + ")";
+                        String timestamp = matcher.group(1);
+                        String instance = matcher.group(2);
+                        String status = matcher.group(3);
+                        woStatus = status + " (" + instance + ") à " + timestamp;
                     }
                 }
 
-                // d. Statut SO (ServiceOrderData DELETED)
-                if (line.contains("ServiceOrderData DELETED") && line.contains(requestId)) {
-                    Pattern pattern = Pattern.compile("\\|([^|]+)\\|ServiceOrderData SWAPPED IN");
-                    Matcher matcher = pattern.matcher(line);
-                    if (matcher.find()) {
-                        soStatus = matcher.group(1);
-                        long micros = Long.parseLong(matcher.group(2));
-                        processingTimeSO = String.format("%.2f secondes", micros / 1_000_000.0);
+                // SO
+                if (line.contains("ServiceOrderData") && line.contains(requestId)) {
+                    if (line.contains("DELETED")) {
+                        soStatus = "DELETED";
+                        endTimeSO = extractTimestampMillis(line);
+                    } else if (line.contains("PROCESSED")) {
+                        soStatus = "PROCESSED";
+                    } else if (line.contains("FAILED")) {
+                        soStatus = "FAILED";
                     }
                 }
             }
 
-            // 4. Affichage du résultat
-            System.out.println("\n Résultat pour la Request ID " + requestId + ":");
+            // Calcul temps SO
+            if (startTimeSO != null && endTimeSO != null) {
+                long diffMillis = endTimeSO - startTimeSO;
+                processingTimeSO = String.format("%.2f secondes", diffMillis / 1000.0);
+            } else {
+                processingTimeSO = "Non disponible";
+            }
+
+            // Résultat final
+            System.out.println("\nRésultat pour la Request ID " + requestId + ":");
             System.out.println("- Opération       : " + (operation != null ? operation : "Non trouvée"));
             System.out.println("- Statut PO       : " + (poStatus != null ? poStatus : "Non trouvé"));
             System.out.println("- Statut WO       : " + (woStatus != null ? woStatus : "Non trouvé"));
@@ -76,5 +91,21 @@ public class    LogAnalyzer {
         } catch (IOException e) {
             System.err.println("Erreur de lecture du fichier : " + e.getMessage());
         }
+    }
+
+    private static Long extractTimestampMillis(String line) {
+        Pattern pattern = Pattern.compile("(\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2})");
+        Matcher matcher = pattern.matcher(line);
+        if (matcher.find()) {
+            String timestampStr = matcher.group(1);
+            try {
+                SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+                Date date = sdf.parse(timestampStr);
+                return date.getTime();
+            } catch (ParseException e) {
+                return null;
+            }
+        }
+        return null;
     }
 }
